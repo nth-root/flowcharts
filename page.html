@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: #fff;
+        }
+
+        #page {
+            display: flex;
+            box-sizing: border-box;
+        }
+
+        #page svg {
+            width: 100%;
+            height: 100%;
+            max-width: none;
+            white-space: nowrap !important;
+        }
+
+        .situation>rect,
+        .situation>g * {
+            fill: #fdd !important;
+            stroke: #d00 !important;
+        }
+
+        .cmd>rect,
+        .cmd>g * {
+            fill: #404 !important;
+            stroke: #303 !important;
+            font-family: monospace;
+            /* font-size: 0.93em; */
+            color: #fff;
+        }
+
+        .choice>polygon,
+        .choice>g * {
+            fill: #ffd !important;
+            stroke: #ee0 !important;
+        }
+
+        .solution>rect,
+        .solution>g * {
+            fill: #cfc !important;
+            stroke: #0e0 !important;
+        }
+
+        .ref>rect,
+        .ref>polygon,
+        .ref>path,
+        .ref>g * {
+            fill: #fff !important;
+            stroke: #000 !important;
+        }
+
+        .default>rect,
+        .default>g * {
+            stroke-width: 2px !important;
+        }
+
+        .edge-thickness-normal {
+            stroke-width: 2px !important;
+        }
+
+        .edgeLabel p {
+            background-color: #fff !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="page"></div>
+    <script type="module">
+        try {
+            const mermaid = (await import("https://cdn.jsdelivr.net/npm/mermaid@11.17.2/dist/mermaid.esm.min.mjs")).default;
+            const elk = (await import("https://cdn.jsdelivr.net/npm/@mermaid-js/layout-elk@0.2.3/dist/mermaid-layout-elk.esm.min.mjs")).default;
+            mermaid.registerLayoutLoaders(elk);
+            window.mermaid = mermaid;
+            window.__ready = true;
+        } catch (err) {
+            window.__error = String((err && err.message) || err);
+        }
+    </script>
+</body>
+
+</html>
