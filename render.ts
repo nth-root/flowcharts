@@ -151,13 +151,23 @@ async function renderPage(browser: Browser, file: string): Promise<RenderResult>
             pageHeight - (MARGIN * 2.8),
         );
 
+        function footerLink(url: string, text: string) {
+            return `<a href="${url}" style="color: #000; font-weight:normal;">${text}</a>`;
+        }
+
+        const license = [
+            '© ' + new Date().getFullYear() + ' ' + footerLink('https://nth-root.nl/en/', 'Nth Root Software Consultancy') + '.',
+            'Licensed under ' + footerLink('https://creativecommons.org/licenses/by/4.0/', 'CC BY 4.0') + '.',
+            'Source: ' + footerLink('https://github.com/nth-root/flowcharts', 'github.com/nth-root/flowcharts'),
+        ].join(' ');
+
         const pdf = await page.pdf({
             printBackground: true,
             landscape,
             format: 'A4',
             displayHeaderFooter: true,
             headerTemplate: renderHeaderFooter(''),
-            footerTemplate: renderHeaderFooter('© <a href="https://nth-root.nl/en/" style="color: #000; font-weight:normal;">Nth Root Software Consultancy</a>'),
+            footerTemplate: renderHeaderFooter(license),
             margin: {
                 top: `${MARGIN}mm`,
                 right: `${MARGIN}mm`,
