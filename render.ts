@@ -89,8 +89,10 @@ async function renderPage(browser: Browser, file: string): Promise<RenderResult>
     const html = await readFile(path.join(import.meta.dirname, 'page.html'), 'utf8');
     const page = await browser.newPage();
 
-    const nonBreakingHyphen = '#8209;'
-    src = src.replaceAll(/(?<=\([^()]*)-/g, nonBreakingHyphen);
+    // Keep flags intact: Chrome offers a line break after every hyphen, and no
+    // CSS property suppresses that without disabling wrapping altogether.
+    src = src.replaceAll(/\((["']?)\$[^()]*\1\)/g, (label) =>
+        label.replaceAll(/[^\s()"']*-[^\s()"']*/g, '<code>$&</code>'));
 
     try {
         await page.setContent(html, { waitUntil: "domcontentloaded" });
