@@ -28,7 +28,7 @@ flowchart TD
     FluxUnhealthy -->|no| NoSyncTriggered([Nothing has triggered a sync yet]):::situation --> ReconcileStale($ flux reconcile -n NS kustomization NAME --with-source):::cmd
     FluxUnhealthy -->|yes| FluxLogs($ flux logs -A --level=error):::cmd
 
-    FailingObject -->|"source (Git/OCI/Bucket/Helm)"| FixSource[Fix the URL, ref or credentials from the Message column] --> ReconcileSource($ flux reconcile -n NS source TYPE NAME):::cmd
+    FailingObject -->|"source (Git/OCI/Bucket/Helm)"| FixSource["Fix the URL, ref or credentials (see Message)"] --> ReconcileSource($ flux reconcile -n NS source TYPE NAME):::cmd
 
     FailingObject -->|Kustomization/HelmRelease| GetEvents($ flux events -n NS --for KIND/NAME):::cmd
 
