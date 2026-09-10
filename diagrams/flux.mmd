@@ -42,6 +42,7 @@ flowchart TD
     FixHelmRelease --> ReconcileHelmKustomization("$ flux reconcile -n NS kustomization NAME --with-source"):::cmd --> ReconcileHelmRelease("$ flux reconcile -n NS helmrelease NAME --reset"):::cmd
 
     Reason -->|HealthCheckFailed| CheckPodIssues
+    Reason -->|DependencyNotReady| DependencyNotReady[Start again at the dependency]
     Reason -->|other| CheckMessage[Check the Message column] --> FixIssue[Fix in Git] --> Reconcile($ flux reconcile -n NS kustomization NAME --with-source):::cmd
 
     FailingObject -->|HelmChart| FixChart[Fix spec.chart in the HelmRelease in Git] --> ReconcileChart($ flux reconcile -n NS kustomization NAME --with-source):::cmd
