@@ -7,6 +7,9 @@ flowchart TD
 
     Trace --> Owned{Managed by}:::choice
 
+    NotReady([A Flux object is not Ready]):::situation
+    NotReady ~~~ Owned
+
     Owned -->|Kustomization| FailingObject{Last failing<br>block}:::choice
     Owned -->|HelmRelease| TraceHelmRelease($ flux trace -n NS helmrelease NAME):::cmd --> FailingObject
     Owned -->|not managed| Unmanaged[Add it to spec.path, or find the tool that applied it]
@@ -20,6 +23,8 @@ flowchart TD
     Suspended -->|no| FluxCheck($ flux check):::cmd --> FluxUnhealthy{Problems?}:::choice
     Suspended -->|yes| Resume($ flux resume -n NS KIND NAME):::cmd
 
+    Resume ~~~ FluxUnhealthy
+
     FluxUnhealthy -->|no| NoSyncTriggered([Nothing has triggered a sync yet]):::situation --> ReconcileStale($ flux reconcile -n NS kustomization NAME --with-source):::cmd
     FluxUnhealthy -->|yes| FluxLogs($ flux logs -A --level=error):::cmd
 
@@ -32,6 +37,7 @@ flowchart TD
     Changes -->|yes| NotApplied([Flux is not applying this object]):::situation --> CheckKustomization[Check spec.path and kustomization.yaml]
     Changes -->|no| CheckPodIssues:::ref@{ shape: doc, label: "Troubleshoot workloads" }
 
+    NotReady --> GetEvents
     GetEvents --> Reason{Reason}:::choice
     Reason -->|RetriesExhausted| RetriesExhausted([The HelmRelease failed and Flux will not retry]):::situation --> FixHelmRelease[Fix the HelmRelease in Git] --> ReconcileHelmKustomization("$ flux reconcile -n NS kustomization NAME --with-source"):::cmd --> ReconcileHelmRelease("$ flux reconcile -n NS helmrelease NAME --reset"):::cmd
     Reason -->|HealthCheckFailed| HealthCheckFailed([Workload health checks failed]):::situation --> CheckPodIssues
