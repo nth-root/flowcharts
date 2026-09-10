@@ -43,6 +43,11 @@ flowchart TD
 
     Reason -->|HealthCheckFailed| CheckPodIssues
     Reason -->|DependencyNotReady| DependencyNotReady[Start again at the dependency]
-    Reason -->|other| CheckMessage[Check the Message column] --> FixIssue[Fix in Git] --> Reconcile($ flux reconcile -n NS kustomization NAME --with-source):::cmd
+
+    DependencyNotReady ~~~ CheckMessage
+
+    Reason -->|other| CheckMessage[Check the Message column] --> Rollout{Waiting on<br>workload?}:::choice
+    Rollout -->|no| FixIssue[Fix in Git] --> Reconcile($ flux reconcile -n NS kustomization NAME --with-source):::cmd
+    Rollout -->|yes| CheckPodIssues
 
     FailingObject -->|HelmChart| FixChart[Fix spec.chart in the HelmRelease in Git] --> ReconcileChart($ flux reconcile -n NS kustomization NAME --with-source):::cmd
