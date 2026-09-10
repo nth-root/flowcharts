@@ -2,12 +2,15 @@
 %% SPDX-License-Identifier: CC-BY-4.0
 
 flowchart TD
-    ClusterDoesNotMatch([The cluster does not match Git]):::situation --> GetNonReady
-    GetNonReady($ flux get all -A --status-selector ready!=true):::cmd
+    Reported([A workload is not running the expected version]):::situation --> Trace
+    Trace($ flux trace -n NS KIND NAME):::cmd
 
-    GetNonReady --> NonReadyResults{First result}:::choice
+    Trace --> Owned{Managed by<br>Flux?}:::choice
 
-    NonReadyResults -->|no output| GetAll($ flux get all -A):::cmd --> CheckRevision[Compare the Revision column with Git]
+    Owned -->|yes| FailingObject{Last failing<br>block}:::choice
+    Owned -->|no| Unmanaged[Add it to spec.path, or find the tool that applied it]
+
+    FailingObject -->|none| CheckRevision[Compare the applied revision with Git]
 
     CheckRevision --> Matches{Matches?}:::choice
     Matches -->|no| NotAdvancing([Ready but not advancing]):::situation
@@ -19,10 +22,10 @@ flowchart TD
     FluxUnhealthy -->|no| NoSyncTriggered([Nothing has triggered a sync yet]):::situation --> ReconcileStale($ flux reconcile -n NS kustomization NAME --with-source):::cmd
     FluxUnhealthy -->|yes| FluxLogs($ flux logs -A --level=error):::cmd
 
-    NonReadyResults -->|"source (Git/OCI/Bucket/Helm)"| NonReadySource[Check the Message column]
+    FailingObject -->|"source (Git/OCI/Bucket/Helm)"| NonReadySource[Check the Message column]
     NonReadySource --> FixSource[Fix the URL, ref or credentials in Git] --> ReconcileSource($ flux reconcile -n NS source TYPE NAME):::cmd
 
-    NonReadyResults -->|Kustomization/HelmRelease| GetEvents($ flux events -n NS --for KIND/NAME):::cmd
+    FailingObject -->|Kustomization/HelmRelease| GetEvents($ flux events -n NS --for KIND/NAME):::cmd
 
     Matches -->|yes| Reconciled([Flux reports everything as reconciled]):::situation --> DiffKustomization($ flux diff -n NS kustomization NAME --path ./PATH):::cmd --> Changes{Changes?}:::choice
     Changes -->|yes| NotApplied([Flux is not applying this object]):::situation --> CheckKustomization[Check spec.path and kustomization.yaml]
@@ -33,4 +36,4 @@ flowchart TD
     Reason -->|HealthCheckFailed| HealthCheckFailed([Workload health checks failed]):::situation --> CheckPodIssues
     Reason -->|other| CheckMessage[Check the Message column] --> FixIssue[Fix in Git] --> Reconcile($ flux reconcile -n NS kustomization NAME --with-source):::cmd
 
-    NonReadyResults -->|HelmChart| FixChart[Fix spec.chart in the HelmRelease in Git] --> ReconcileChart($ flux reconcile -n NS kustomization NAME --with-source):::cmd
+    FailingObject -->|HelmChart| FixChart[Fix spec.chart in the HelmRelease in Git] --> ReconcileChart($ flux reconcile -n NS kustomization NAME --with-source):::cmd
