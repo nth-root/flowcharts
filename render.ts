@@ -216,7 +216,7 @@ async function scan(): Promise<Job[]> {
     // Root-level files become standalone documents
     for (const entry of entries.filter((entry) => entry.isFile() && isMermaid(entry.name)).sort((a, b) => byPrefix(a.name, b.name))) {
         const base = path.basename(entry.name, path.extname(entry.name));
-        jobs.push({ out: `${base}.pdf`, title: createTitle(base), files: [path.join(SOURCE_DIR, entry.name)] });
+        jobs.push({ out: `${base}-troubleshooting.pdf`, title: createTitle(base), files: [path.join(SOURCE_DIR, entry.name)] });
     }
 
     // Each subdirectory becomes one merged, multi-page document
@@ -228,7 +228,7 @@ async function scan(): Promise<Job[]> {
             .map((n) => path.join(dir, n));
 
         if (files.length) {
-            jobs.push({ out: `${directory.name}.pdf`, title: createTitle(directory.name), files });
+            jobs.push({ out: `${directory.name}-troubleshooting.pdf`, title: createTitle(directory.name), files });
         }
     }
 
