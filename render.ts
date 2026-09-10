@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: MIT
+
 import { readFile, writeFile, mkdir, readdir } from "node:fs/promises"
 import path from "node:path"
 import { PDFDocument } from "pdf-lib";

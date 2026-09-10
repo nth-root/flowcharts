@@ -1,3 +1,6 @@
+%% SPDX-FileCopyrightText: 2026 Nth Root Software Consultancy
+%% SPDX-License-Identifier: CC-BY-4.0
+
 flowchart TD
     ClusterDoesNotMatch([The cluster does not match Git]):::situation --> GetNonReady
     GetNonReady($ flux get all -A --status-selector ready!=true):::cmd

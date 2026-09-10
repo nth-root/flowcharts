@@ -34,3 +34,10 @@ Page orientation is chosen per diagram, based on its aspect ratio.
 > While GitHub renders a preview of Mermaid diagrams, it does not support the
 > ELK renderer and lacks the custom style rules, so those previews are not
 > representative of the rendered result.
+
+## License
+
+The diagrams in `diagrams/` and the PDFs rendered from them are licensed under
+[CC BY 4.0](LICENSE.txt).
+The build script (`render.ts` and `page.html`) is licensed under the
+[MIT license](LICENSE-CODE.txt).
