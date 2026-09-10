@@ -3,12 +3,13 @@
 
 flowchart TD
     Reported([A workload is not running the expected version]):::situation --> Trace
-    Trace($ flux trace -n NS KIND NAME):::cmd
+    Trace($ flux trace -n NS deploy NAME):::cmd
 
-    Trace --> Owned{Managed by<br>Flux?}:::choice
+    Trace --> Owned{Managed by}:::choice
 
-    Owned -->|yes| FailingObject{Last failing<br>block}:::choice
-    Owned -->|no| Unmanaged[Add it to spec.path, or find the tool that applied it]
+    Owned -->|Kustomization| FailingObject{Last failing<br>block}:::choice
+    Owned -->|HelmRelease| TraceHelmRelease($ flux trace -n NS helmrelease NAME):::cmd --> FailingObject
+    Owned -->|not managed| Unmanaged[Add it to spec.path, or find the tool that applied it]
 
     FailingObject -->|none| CheckRevision[Compare the applied revision with Git]
 
