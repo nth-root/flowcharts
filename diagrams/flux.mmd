@@ -17,9 +17,9 @@ flowchart TD
     FailingObject -->|none| CheckRevision[Compare the applied revision with Git]
 
     CheckRevision --> Matches{Matches?}:::choice
-    Matches -->|no| NotAdvancing([Ready but not advancing]):::situation
+    Matches -->|no| NotAdvancing([Ready but not advancing]):::situation --> FluxGet($ flux get KIND NAME -A):::cmd
 
-    NotAdvancing --> Suspended{Suspended?}:::choice
+    FluxGet --> Suspended{Suspended?}:::choice
     Suspended -->|no| FluxCheck($ flux check):::cmd --> FluxUnhealthy{Problems?}:::choice
     Suspended -->|yes| Resume($ flux resume -n NS KIND NAME):::cmd
 
