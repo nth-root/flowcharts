@@ -59,7 +59,7 @@ async function render(jobs: Job[]) {
 
             for (const [i, file] of job.files.entries()) {
                 try {
-                    const rendered = await renderPage(browser, file);
+                    const rendered = await renderPage(browser, file, job.title);
 
                     pages.push(rendered.pdf);
                 } catch (error) {
@@ -84,7 +84,7 @@ interface RenderResult {
 
 const THEME = 'default';
 
-async function renderPage(browser: Browser, file: string): Promise<RenderResult> {
+async function renderPage(browser: Browser, file: string, title: string): Promise<RenderResult> {
     let src = await readFile(file, 'utf8');
     const html = await readFile(path.join(import.meta.dirname, 'page.html'), 'utf8');
     const page = await browser.newPage();
@@ -99,7 +99,10 @@ async function renderPage(browser: Browser, file: string): Promise<RenderResult>
         await page.waitForFunction('window.__ready == true || window.__error');
 
         const box: Box = await page.evaluate(
-            async (code: string, theme: string): Promise<Box> => {
+            async (code: string, theme: string, title: string): Promise<Box> => {
+                const titleElement = document.getElementById('title')!;
+                titleElement.innerHTML = title;
+
                 const config: Record<string, unknown> = {
                     startOnLoad: false,
                     theme,
@@ -135,7 +138,8 @@ async function renderPage(browser: Browser, file: string): Promise<RenderResult>
                 return { width: viewbox[2]!, height: viewbox[3]! };
             },
             src,
-            THEME
+            THEME,
+            title
         );
 
         const landscape = box.width / box.height > 1;
@@ -210,7 +214,7 @@ async function scan(): Promise<Job[]> {
     // Root-level files become standalone documents
     for (const entry of entries.filter((entry) => entry.isFile() && isMermaid(entry.name)).sort((a, b) => byPrefix(a.name, b.name))) {
         const base = path.basename(entry.name, path.extname(entry.name));
-        jobs.push({ out: `${base}.pdf`, title: humanize(base), files: [path.join(SOURCE_DIR, entry.name)] });
+        jobs.push({ out: `${base}.pdf`, title: createTitle(base), files: [path.join(SOURCE_DIR, entry.name)] });
     }
 
     // Each subdirectory becomes one merged, multi-page document
@@ -222,7 +226,7 @@ async function scan(): Promise<Job[]> {
             .map((n) => path.join(dir, n));
 
         if (files.length) {
-            jobs.push({ out: `${directory.name}.pdf`, title: humanize(directory.name), files });
+            jobs.push({ out: `${directory.name}.pdf`, title: createTitle(directory.name), files });
         }
     }
 
@@ -231,6 +235,12 @@ async function scan(): Promise<Job[]> {
 
 function isMermaid(path: string): boolean {
     return /\.(mmd|mermaid)$/i.test(path);
+}
+
+function createTitle(name: string): string {
+    const title = humanize(name);
+
+    return `${title} troubleshooting flowchart`;
 }
 
 function humanize(name: string): string {
