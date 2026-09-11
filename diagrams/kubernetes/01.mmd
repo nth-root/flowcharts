@@ -1,0 +1,40 @@
+%% SPDX-FileCopyrightText: 2026 Nth Root Software Consultancy
+%% SPDX-License-Identifier: CC-BY-4.0
+
+flowchart TD
+    Start([A pod is not running as expected]):::situation --> Triage
+    Triage($ kubectl get -n NS pod POD -o wide):::cmd --> PodStatus{"Status"}:::choice
+
+    PodStatus -->|Pending| Pending([The pod cannot be scheduled]):::situation
+    Pending --> PendingEvents($ kubectl events -n NS --for pod/POD):::cmd
+    PendingEvents --> PendingReason{"Message"}:::choice
+    PendingReason -->|Insufficient cpu / memory| InsufficientResources([No node with enough resources available]):::situation --> AddNodeCapacity["Lower requests or add node capacity"]
+    PendingReason -->|Taint / affinity / nodeSelector| TaintOrAffinity["Fix tolerations, labels or selectors"]
+    PendingReason -->|Unbound PVC| UnboundPvc["Check the PVC's StorageClass and whether a PV can bind"]
+
+    PodStatus -->|SchedulingGated| SchedulingGated([A gate is deliberately holding the pod]):::situation
+    SchedulingGated --> CheckSchedulingGates[Check spec.schedulingGates]
+    CheckSchedulingGates --> ClearGate["Wait for, or fix, the controller that clears the gate"]
+
+    PodStatus -->|InvalidImageName| InvalidImageName([The image name/tag contains invalid characters]):::situation
+    InvalidImageName --> FixImageName[Check the image name for typos]
+
+    PodStatus -->|ImagePullBackOff / ErrImagePull| ImagePull([Image cannot be pulled]):::situation
+    ImagePull --> ImageEvents("$ kubectl events -n NS --for pod/POD"):::cmd
+    ImageEvents --> PullErr{"Message"}:::choice
+    PullErr -->|401 / 403| ImagePullSecret([Unable to authenticate with the registry]):::situation --> FixImagePullSecret[Fix the imagePullSecret]
+    PullErr -->|429 / toomanyrequests| RateLimited["Authenticate to the registry or use a pull-through mirror"]
+    PullErr -->|manifest unknown / not found| WrongImageName[Fix image name/tag/digest]
+    PullErr -->|timeout / no such host| RegistryUnreachable([The registry is unreachable]):::situation --> FixRegistry[Check the registry host, DNS and egress rules]
+
+    PodStatus -->|"ContainerCreating (&gt; 1 min)"| ContainerCreating([Sandbox or volume setup is failing]):::situation
+    ContainerCreating --> CheckContainerCreating($ kubectl events -n NS --for pod/POD):::cmd
+    CheckContainerCreating --> FixSandbox[Check the CNI plugin and volume mounts]
+
+    PodStatus -->|CreateContainerConfigError| ContainerConfig([The container config cannot be resolved]):::situation
+    ContainerConfig --> CheckContainerConfig[Check env/envFrom against ConfigMaps and Secrets, and runAsNonRoot against the image user]
+
+    PodStatus -->|CreateContainerError / RunContainerError| ContainerStart([The container cannot be started]):::situation
+    ContainerStart --> CheckContainerStart["Check command, args, workingDir and a read-only rootfs"]
+
+    PodStatus -->|other| Next:::ref@{ shape: doc, label: "Next page" }

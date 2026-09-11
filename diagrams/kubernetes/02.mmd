@@ -1,0 +1,44 @@
+%% SPDX-FileCopyrightText: 2026 Nth Root Software Consultancy
+%% SPDX-License-Identifier: CC-BY-4.0
+
+flowchart TD
+    Prev:::ref@{ shape: doc, label: "Previous page" } --> PodStatus{"Status"}:::choice
+
+    PodStatus -->|"CrashLoopBackOff /<br>Running (with restarts)"| CrashLoop([The container keeps exiting and restarting]):::situation
+    CrashLoop --> Describe($ kubectl describe -n NS pod POD):::cmd
+    Describe --> LivenessFailed{Liveness<br>probe<br>failed?}:::choice
+    LivenessFailed -->|no| LastState[Look for Last State] --> Reason{Last State}:::choice
+    Reason -->|Error| CrashLogs($ kubectl logs -n NS POD --previous):::cmd --> FixExit[Fix the error shown in the logs, or check the exit code against command and args]
+    LivenessFailed -->|yes| LivenessProbe[Fix the probe, or add a startupProbe]
+
+    PodStatus -->|OOMKilled| PodOOMKilled([The container exceeded its memory limit]):::situation --> OOMKilled[Raise memory limit<br>or fix memory leak]
+
+    Reason -->|OOMKilled| SeeOOMKilled[Diagnose as OOMKilled]
+    Reason -->|Completed, exit 0| UseJob[Change command/args<br>or use a Job]
+
+    PodStatus -->|Terminating| Terminating([Cannot finish deleting the pod]):::situation --> CheckTerminatingReason($ kubectl get -n NS pod POD -o yaml):::cmd --> Finalizers{Has finalizers?}:::choice
+    Finalizers -->|yes| FixController[Fix the owning controller]
+    Finalizers -->|no| GetNodes($ kubectl get node NODE):::cmd --> IsNodeReady{Node<br>Ready?}:::choice
+    IsNodeReady -->|yes| SlowShutdown[Check preStop and termination grace period]
+    IsNodeReady -->|no| NodeNotReady([Stuck until the node returns or the pod is force-deleted]):::situation
+    NodeNotReady --> RecoverNode[Recover the node]
+    NodeNotReady --> DeletePod($ kubectl delete -n NS pod POD --force):::cmd
+
+    PodStatus -->|Evicted| Evicted([Kubelet reclaimed resources on the node]):::situation
+    Evicted --> NodeCapacity($ kubectl describe node NODE):::cmd --> IncreaseCapacity[Raise requests or add node capacity]
+
+    PodStatus -->|"Unknown / ContainerStatusUnknown"| Unknown([The node stopped reporting or restarted]):::situation --> CheckNodes($ kubectl get node NODE):::cmd --> UnknownNodeReady{Node<br>Ready?}:::choice
+    UnknownNodeReady -->|yes| StaleRejectedPod[Delete the leftover pod, then check why the node or kubelet restarted]
+    UnknownNodeReady -->|no| NodeNotReady
+
+    PodStatus -->|NodeAffinity| NodeAffinity([The pod no longer matches the node it was bound to]):::situation
+    NodeAffinity --> DeleteRejected[Delete the pod so<br>it reschedules]
+
+    PodStatus -->|"Running (ready)"| Networking([Pod is up, networking might be the issue]):::situation --> PfSvc($ kubectl port-forward -n NS svc/SVC 8080:PORT):::cmd --> SvcResponds{localhost:8080<br>responds?}:::choice
+
+    SvcResponds -->|yes| CurlSvc[curl SVC.NS:PORT<br>from the failing client's namespace] --> InClusterResponds{Responds?}:::choice
+    InClusterResponds -->|no| CheckPath[Check the app listens on 0.0.0.0, NetworkPolicies and cluster DNS]
+    InClusterResponds -->|yes| FixIngress[Check Ingress backend, ingressClassName and host/path rules]
+    SvcResponds -->|no| FixSvc[Check the Service selector, targetPort and the port the app listens on]
+
+    PodStatus -->|"Running (not ready)"| ReadinessProbe([The readiness probe is failing]):::situation --> CheckProbe["Check readinessProbe and application dependencies"]
