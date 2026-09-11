@@ -156,7 +156,7 @@ async function renderPage(browser: Browser, file: string, title: string): Promis
                 el.style.height = height + 'mm';
             },
             pageWidth - (MARGIN * 2),
-            pageHeight - (MARGIN * 2.8),
+            pageHeight - (MARGIN * 2.5),
         );
 
         function footerLink(url: string, text: string) {
